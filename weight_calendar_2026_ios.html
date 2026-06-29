@@ -1,0 +1,1842 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f5f0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="体重管理2026">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <title>2026 体重管理カレンダー iOS版</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f5f0;
+      --panel: #ffffff;
+      --ink: #1f2933;
+      --muted: #6b7280;
+      --line: #d9ddd5;
+      --accent: #0f766e;
+      --accent-dark: #115e59;
+      --gain: #b42318;
+      --loss: #047857;
+      --empty: #eef0eb;
+      --shadow: 0 12px 30px rgba(31, 41, 51, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", Meiryo, system-ui, sans-serif;
+      line-height: 1.5;
+      min-height: 100svh;
+      padding:
+        env(safe-area-inset-top)
+        env(safe-area-inset-right)
+        env(safe-area-inset-bottom)
+        env(safe-area-inset-left);
+      -webkit-tap-highlight-color: rgba(15, 118, 110, 0.18);
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    .app {
+      width: min(1480px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(240px, 1fr) auto;
+      gap: 18px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 3vw, 42px);
+      letter-spacing: 0;
+      line-height: 1.15;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .button {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--ink);
+      cursor: pointer;
+      padding: 8px 12px;
+    }
+
+    .button.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .button:hover {
+      border-color: var(--accent);
+    }
+
+    .goal-panel {
+      display: grid;
+      grid-template-columns: minmax(240px, 420px) minmax(260px, 1fr);
+      gap: 14px;
+      align-items: stretch;
+      margin-bottom: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .goal-editor {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .goal-input {
+      width: 100%;
+      min-height: 74px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fcfcfb;
+      color: var(--ink);
+      padding: 9px 10px;
+      resize: vertical;
+    }
+
+    .goal-input:focus {
+      outline: 2px solid rgba(15, 118, 110, 0.2);
+      border-color: var(--accent);
+      background: #fff;
+    }
+
+    .goal-display {
+      display: grid;
+      align-content: center;
+      min-height: 110px;
+      border-radius: 8px;
+      background: #0f766e;
+      color: #fff;
+      padding: 16px 18px;
+    }
+
+    .goal-display .label {
+      font-size: 12px;
+      font-weight: 700;
+      opacity: 0.82;
+    }
+
+    .goal-display .text {
+      margin-top: 5px;
+      font-size: clamp(28px, 4.2vw, 58px);
+      font-weight: 800;
+      line-height: 1.08;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .goal-display.empty {
+      background: #e7ebe5;
+      color: var(--muted);
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(150px, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .metric {
+      min-height: 86px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 13px 14px;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .metric .value {
+      display: block;
+      margin-top: 4px;
+      font-size: 25px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .metric .note {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      min-height: 18px;
+    }
+
+    .monthly-exercise-summary {
+      display: grid;
+      grid-template-columns: auto repeat(2, minmax(170px, auto));
+      gap: 8px;
+      align-items: center;
+      margin: -6px 0 14px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .exercise-summary-title {
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .exercise-summary-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 5px 9px;
+    }
+
+    .exercise-summary-item b {
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .month-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+
+    .view-tabs {
+      display: inline-flex;
+      gap: 4px;
+      margin: 0 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 4px;
+    }
+
+    .tab-button,
+    .view-button {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--ink);
+      cursor: pointer;
+      padding: 8px 14px;
+      font-weight: 700;
+    }
+
+    .view-button {
+      border-color: transparent;
+      min-width: 110px;
+    }
+
+    .tab-button[aria-selected="true"],
+    .view-button[aria-selected="true"] {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .months {
+      display: block;
+    }
+
+    .month {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .month[hidden] {
+      display: none;
+    }
+
+    .chart-panel {
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .chart-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .chart-title strong {
+      font-size: 18px;
+    }
+
+    .chart-title span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+      height: 320px;
+    }
+
+    #weightChart {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .calendar-view[hidden] {
+      display: none;
+    }
+
+    .month-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfbf8;
+    }
+
+    .month-title strong {
+      font-size: 18px;
+    }
+
+    .month-title span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .weekdays,
+    .days {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+
+    .weekdays {
+      border-bottom: 1px solid var(--line);
+      background: #f1f3ef;
+    }
+
+    .weekday {
+      padding: 7px 4px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .day {
+      min-height: 214px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 7px;
+      background: #fff;
+    }
+
+    .day:nth-child(7n) {
+      border-right: 0;
+    }
+
+    .day.blank {
+      background: var(--empty);
+    }
+
+    .date-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 4px;
+      min-height: 20px;
+      margin-bottom: 6px;
+    }
+
+    .date-num {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .today-badge {
+      display: none;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+      padding: 1px 6px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .day.today .today-badge {
+      display: inline-block;
+    }
+
+    .fields {
+      display: grid;
+      gap: 4px;
+    }
+
+    .field {
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      align-items: center;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .field span {
+      white-space: nowrap;
+    }
+
+    .memo-field {
+      display: grid;
+      gap: 3px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .meal-fields {
+      display: grid;
+      gap: 6px;
+    }
+
+    .meal-toggle-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 4px;
+    }
+
+    .meal-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 3px;
+      min-height: 24px;
+      color: var(--ink);
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .meal-toggle input {
+      width: 14px;
+      height: 14px;
+      accent-color: var(--accent);
+    }
+
+    .meal-note-row {
+      display: none;
+    }
+
+    .meal-note-row.active {
+      display: grid;
+    }
+
+    .rest-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 22px;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .daily-checks {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+    }
+
+    .exercise-checks {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
+    }
+
+    .exercise-check {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      min-height: 22px;
+      color: var(--ink);
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .exercise-check input {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--accent);
+    }
+
+    .rest-row input {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+    }
+
+    .steps-field {
+      display: grid;
+    }
+
+    .input-reminder {
+      display: none;
+      border: 1px solid #facc15;
+      border-radius: 6px;
+      background: #fefce8;
+      color: #854d0e;
+      padding: 5px 6px;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .day.needs-input .input-reminder {
+      display: block;
+    }
+
+    .weight-input,
+    .minutes-input,
+    .ring-fit-minutes-input,
+    .exercise-bike-minutes-input,
+    .steps-input,
+    .memo-input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 5px 6px;
+      background: #fcfcfb;
+      color: var(--ink);
+      text-align: right;
+    }
+
+    .weight-input,
+    .minutes-input,
+    .ring-fit-minutes-input,
+    .exercise-bike-minutes-input,
+    .steps-input {
+      height: 26px;
+    }
+
+    .exercise-time-field {
+      display: none;
+    }
+
+    .exercise-time-field.active {
+      display: grid;
+    }
+
+    .memo-input,
+    .meal-note-input {
+      width: 100%;
+      min-height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fcfcfb;
+      color: var(--ink);
+      padding: 5px 6px;
+      font-size: 10px;
+      resize: vertical;
+      text-align: left;
+    }
+
+    .weight-input:focus,
+    .minutes-input:focus,
+    .ring-fit-minutes-input:focus,
+    .exercise-bike-minutes-input:focus,
+    .steps-input:focus,
+    .meal-note-input:focus,
+    .memo-input:focus {
+      outline: 2px solid rgba(15, 118, 110, 0.2);
+      border-color: var(--accent);
+      background: #fff;
+    }
+
+    .calc {
+      display: grid;
+      gap: 2px;
+      margin-top: 5px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .calc-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 5px;
+      min-height: 16px;
+    }
+
+    .calc-row b {
+      color: var(--ink);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .plus {
+      color: var(--gain) !important;
+    }
+
+    .minus {
+      color: var(--loss) !important;
+    }
+
+    .zero {
+      color: var(--muted) !important;
+    }
+
+    .footer-note {
+      margin: 16px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    @media (max-width: 1180px) {
+      .summary {
+        grid-template-columns: repeat(3, minmax(150px, 1fr));
+      }
+
+      .monthly-exercise-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .goal-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        width: min(100% - 18px, 1480px);
+        padding-top: 18px;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+
+      .actions {
+        justify-content: flex-start;
+      }
+
+      .summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .day {
+        min-height: 220px;
+        padding: 5px;
+      }
+
+      .field {
+        grid-template-columns: 32px minmax(0, 1fr);
+      }
+    }
+
+    @supports (-webkit-touch-callout: none) {
+      .button,
+      .tab-button,
+      .view-button {
+        min-height: 44px;
+      }
+
+      .weight-input,
+      .minutes-input,
+      .ring-fit-minutes-input,
+      .exercise-bike-minutes-input,
+      .steps-input,
+      .memo-input,
+      .meal-note-input,
+      .goal-input {
+        font-size: 16px;
+      }
+
+      .weight-input,
+      .minutes-input,
+      .ring-fit-minutes-input,
+      .exercise-bike-minutes-input,
+      .steps-input {
+        height: 34px;
+      }
+
+      .rest-row,
+      .exercise-check,
+      .meal-toggle {
+        min-height: 34px;
+      }
+
+      .memo-input,
+      .meal-note-input {
+        min-height: 38px;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .app {
+        width: 100%;
+        padding: 0;
+      }
+
+      .actions,
+      .footer-note {
+        display: none;
+      }
+
+      .month,
+      .metric {
+        break-inside: avoid;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="topbar" aria-label="体重管理カレンダー">
+      <div>
+        <h1>2026 体重管理カレンダー iOS版 7月-12月</h1>
+        <p class="subtitle">記入ルール：体重は朝のトイレ後に測る。運動時間はざっくりでOK。メモ欄には何をやったか、できなかった理由も残す。食事記録は分かる範囲で、食べたものを素直に書く。</p>
+      </div>
+      <div class="actions">
+        <button class="button primary" id="exportCsv" type="button">CSV出力</button>
+        <button class="button" id="printPage" type="button">印刷</button>
+        <button class="button" id="clearAll" type="button">全消去</button>
+      </div>
+    </section>
+
+    <section class="goal-panel" aria-label="目標">
+      <label class="goal-editor">
+        <span>目標</span>
+        <textarea class="goal-input" id="goalInput" rows="3" aria-label="目標を入力"></textarea>
+      </label>
+      <div class="goal-display empty" id="goalDisplay" aria-live="polite">
+        <span class="label">現在の目標</span>
+        <span class="text" id="goalText">目標未設定</span>
+      </div>
+    </section>
+
+    <section class="summary" aria-label="年間サマリー">
+      <div class="metric">
+        <span class="label">入力日数</span>
+        <span class="value" id="countValue">0日</span>
+        <span class="note">2026年 7月-12月 全184日</span>
+      </div>
+      <div class="metric">
+        <span class="label">最新体重</span>
+        <span class="value" id="latestValue">-- kg</span>
+        <span class="note" id="latestDate">未入力</span>
+      </div>
+      <div class="metric">
+        <span class="label">最大体重</span>
+        <span class="value" id="maxValue">-- kg</span>
+        <span class="note" id="maxDate">未入力</span>
+      </div>
+      <div class="metric">
+        <span class="label">最小体重</span>
+        <span class="value" id="minValue">-- kg</span>
+        <span class="note" id="minDate">未入力</span>
+      </div>
+      <div class="metric">
+        <span class="label">最大から</span>
+        <span class="value" id="fromMaxValue">-- kg</span>
+        <span class="note">最新体重との差</span>
+      </div>
+      <div class="metric">
+        <span class="label">チートデイから</span>
+        <span class="value" id="cheatDayValue">--日</span>
+        <span class="note" id="cheatDayDate">未設定</span>
+      </div>
+    </section>
+
+    <section class="monthly-exercise-summary" aria-label="月別運動サマリー">
+      <span class="exercise-summary-title" id="monthlyExerciseTitle">7月の運動</span>
+      <span class="exercise-summary-item">リングフィット <b id="ringFitMonthSummary">0回 / 0分</b></span>
+      <span class="exercise-summary-item">エアロバイク <b id="exerciseBikeMonthSummary">0回 / 0分</b></span>
+    </section>
+
+    <nav class="month-tabs" id="monthTabs" aria-label="月切り替え"></nav>
+    <nav class="view-tabs" id="viewTabs" aria-label="記録切り替え">
+      <button class="view-button" type="button" data-view="body" aria-selected="true">体重記録</button>
+      <button class="view-button" type="button" data-view="meal" aria-selected="false">食事記録</button>
+    </nav>
+    <section class="months" id="months" aria-label="2026年カレンダー"></section>
+
+    <section class="chart-panel" aria-label="月別体重変化グラフ">
+      <div class="chart-title">
+        <strong id="chartTitle">体重変化</strong>
+        <span id="chartNote">入力済み体重を日別に表示</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="weightChart" aria-label="体重変化の折れ線グラフ"></canvas>
+      </div>
+    </section>
+
+    <p class="footer-note">月ごとに体重記録と食事記録を切り替えできます。未入力の促しはその日が来てから表示します。</p>
+  </main>
+
+  <script>
+    const YEAR = 2026;
+    const START_MONTH = 7;
+    const END_MONTH = 12;
+    const STORAGE_KEY = "weight-calendar-2026-ios";
+    const ACTIVITY_STORAGE_KEY = "weight-calendar-2026-ios-activity";
+    const MEAL_STORAGE_KEY = "weight-calendar-2026-ios-meals";
+    const GOAL_STORAGE_KEY = "weight-calendar-2026-ios-goal";
+    const monthNames = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+    const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+    const goalInput = document.getElementById("goalInput");
+    const goalDisplay = document.getElementById("goalDisplay");
+    const goalText = document.getElementById("goalText");
+    const monthTabsEl = document.getElementById("monthTabs");
+    const viewTabsEl = document.getElementById("viewTabs");
+    const monthsEl = document.getElementById("months");
+    const monthlyExerciseTitle = document.getElementById("monthlyExerciseTitle");
+    const ringFitMonthSummary = document.getElementById("ringFitMonthSummary");
+    const exerciseBikeMonthSummary = document.getElementById("exerciseBikeMonthSummary");
+    const chartCanvas = document.getElementById("weightChart");
+    const chartTitle = document.getElementById("chartTitle");
+    const chartNote = document.getElementById("chartNote");
+    const inputs = new Map();
+    let weights = loadWeights();
+    let activities = loadActivities();
+    let meals = loadMeals();
+    let goal = loadGoal();
+    let activeMonth = START_MONTH;
+    let activeView = "body";
+    pruneWeightsToVisibleRange();
+    pruneActivitiesToVisibleRange();
+    pruneMealsToVisibleRange();
+    updateGoalDisplay(goal);
+
+    function dateKey(year, month, day) {
+      return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    }
+
+    function formatDate(key) {
+      const [, month, day] = key.split("-");
+      return `${Number(month)}月${Number(day)}日`;
+    }
+
+    function loadWeights() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function loadActivities() {
+      try {
+        const raw = localStorage.getItem(ACTIVITY_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function loadMeals() {
+      try {
+        const raw = localStorage.getItem(MEAL_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function loadGoal() {
+      return localStorage.getItem(GOAL_STORAGE_KEY) ?? "";
+    }
+
+    function saveWeights() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(weights));
+    }
+
+    function saveActivities() {
+      localStorage.setItem(ACTIVITY_STORAGE_KEY, JSON.stringify(activities));
+    }
+
+    function saveMeals() {
+      localStorage.setItem(MEAL_STORAGE_KEY, JSON.stringify(meals));
+    }
+
+    function saveGoal() {
+      localStorage.setItem(GOAL_STORAGE_KEY, goal);
+    }
+
+    function updateGoalDisplay(value) {
+      const text = value.trim();
+      goalInput.value = value;
+      goalDisplay.classList.toggle("empty", text === "");
+      goalText.textContent = text || "目標未設定";
+    }
+
+    function pruneWeightsToVisibleRange() {
+      const visibleKeys = new Set(allDateKeys());
+      let changed = false;
+      for (const key of Object.keys(weights)) {
+        if (!visibleKeys.has(key)) {
+          delete weights[key];
+          changed = true;
+        }
+      }
+      if (changed) saveWeights();
+    }
+
+    function pruneActivitiesToVisibleRange() {
+      const visibleKeys = new Set(allDateKeys());
+      let changed = false;
+      for (const key of Object.keys(activities)) {
+        if (!visibleKeys.has(key)) {
+          delete activities[key];
+          changed = true;
+        }
+      }
+      if (changed) saveActivities();
+    }
+
+    function pruneMealsToVisibleRange() {
+      const visibleKeys = new Set(allDateKeys());
+      let changed = false;
+      for (const key of Object.keys(meals)) {
+        if (!visibleKeys.has(key)) {
+          delete meals[key];
+          changed = true;
+        }
+      }
+      if (changed) saveMeals();
+    }
+
+    function getActivity(key) {
+      return {
+        minutes: "",
+        ringFitMinutes: "",
+        exerciseBikeMinutes: "",
+        rest: false,
+        cheatDay: false,
+        steps: "",
+        ringFit: false,
+        exerciseBike: false,
+        memo: "",
+        ...(activities[key] ?? {})
+      };
+    }
+
+    function setActivityField(key, field, value) {
+      const current = getActivity(key);
+      const next = { ...current, [field]: value };
+      if (
+        next.minutes === "" &&
+        next.ringFitMinutes === "" &&
+        next.exerciseBikeMinutes === "" &&
+        !next.rest &&
+        !next.cheatDay &&
+        next.steps === "" &&
+        !next.ringFit &&
+        !next.exerciseBike &&
+        next.memo === ""
+      ) {
+        delete activities[key];
+      } else {
+        activities[key] = next;
+      }
+      saveActivities();
+      updateMonthlyExerciseSummary();
+    }
+
+    function parseMinutes(value) {
+      if (value === "") return 0;
+      const minutes = Number(value);
+      return Number.isFinite(minutes) ? minutes : 0;
+    }
+
+    function calculateExerciseTotal(activity) {
+      const hasSplitMinutes = activity.ringFitMinutes !== "" || activity.exerciseBikeMinutes !== "";
+      const total = parseMinutes(activity.ringFitMinutes) + parseMinutes(activity.exerciseBikeMinutes);
+      if (total > 0) return String(total);
+      if (activity.rest) return "0";
+      if (!hasSplitMinutes) return activity.minutes ?? "";
+      return "";
+    }
+
+    function updateExerciseTotal(minutesInput, ringFitMinutesInput, exerciseBikeMinutesInput, restChecked) {
+      const total = parseMinutes(ringFitMinutesInput.value) + parseMinutes(exerciseBikeMinutesInput.value);
+      minutesInput.value = total > 0 ? String(total) : restChecked ? "0" : "";
+      return minutesInput.value;
+    }
+
+    function toggleExerciseTimeField(row, checked) {
+      row.classList.toggle("active", checked);
+    }
+
+    function formatExerciseMinutes(minutes) {
+      if (minutes < 60) return `${minutes}分`;
+      const hours = Math.floor(minutes / 60);
+      const restMinutes = minutes % 60;
+      return restMinutes === 0 ? `${hours}時間` : `${hours}時間${restMinutes}分`;
+    }
+
+    function getMonthlyExerciseStats(month) {
+      const daysInMonth = new Date(YEAR, month, 0).getDate();
+      const stats = {
+        ringFitCount: 0,
+        ringFitMinutes: 0,
+        exerciseBikeCount: 0,
+        exerciseBikeMinutes: 0
+      };
+
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const activity = getActivity(dateKey(YEAR, month, day));
+        if (activity.ringFit) stats.ringFitCount += 1;
+        if (activity.exerciseBike) stats.exerciseBikeCount += 1;
+        stats.ringFitMinutes += parseMinutes(activity.ringFitMinutes);
+        stats.exerciseBikeMinutes += parseMinutes(activity.exerciseBikeMinutes);
+      }
+
+      return stats;
+    }
+
+    function updateMonthlyExerciseSummary() {
+      const stats = getMonthlyExerciseStats(activeMonth);
+      monthlyExerciseTitle.textContent = `${activeMonth}月の運動`;
+      ringFitMonthSummary.textContent = `${stats.ringFitCount}回 / ${formatExerciseMinutes(stats.ringFitMinutes)}`;
+      exerciseBikeMonthSummary.textContent = `${stats.exerciseBikeCount}回 / ${formatExerciseMinutes(stats.exerciseBikeMinutes)}`;
+    }
+
+    function getMeal(key) {
+      const meal = meals[key] ?? {};
+      const breakfast = meal.breakfast ?? meal.memo ?? "";
+      const lunch = meal.lunch ?? "";
+      const dinner = meal.dinner ?? "";
+      const snack = meal.snack ?? "";
+      return {
+        breakfast,
+        breakfastEnabled: meal.breakfastEnabled ?? breakfast !== "",
+        lunch,
+        lunchEnabled: meal.lunchEnabled ?? lunch !== "",
+        dinner,
+        dinnerEnabled: meal.dinnerEnabled ?? dinner !== "",
+        snack,
+        snackEnabled: meal.snackEnabled ?? snack !== ""
+      };
+    }
+
+    function setMealField(key, field, value) {
+      const current = getMeal(key);
+      const next = { ...current, [field]: value };
+      if (
+        next.breakfast === "" &&
+        !next.breakfastEnabled &&
+        next.lunch === "" &&
+        !next.lunchEnabled &&
+        next.dinner === "" &&
+        !next.dinnerEnabled &&
+        next.snack === "" &&
+        !next.snackEnabled
+      ) {
+        delete meals[key];
+      } else {
+        meals[key] = next;
+      }
+      saveMeals();
+    }
+
+    function ensureMealBullet(input) {
+      if (input.value.trim() !== "") return;
+      input.value = "・";
+      autoResizeTextarea(input);
+    }
+
+    function autoResizeTextarea(input) {
+      input.style.height = "auto";
+      input.style.height = `${input.scrollHeight}px`;
+    }
+
+    function handleMealBulletKeydown(event) {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+
+      const input = event.currentTarget;
+      const start = input.selectionStart;
+      const end = input.selectionEnd;
+      const insert = "\n・";
+      input.value = `${input.value.slice(0, start)}${insert}${input.value.slice(end)}`;
+      const cursor = start + insert.length;
+      input.setSelectionRange(cursor, cursor);
+      autoResizeTextarea(input);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    function isPastDate(key) {
+      const [year, month, day] = key.split("-").map(Number);
+      const target = new Date(year, month - 1, day);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return target < today;
+    }
+
+    function isTodayDate(key) {
+      const [year, month, day] = key.split("-").map(Number);
+      const today = new Date();
+      return today.getFullYear() === year && today.getMonth() + 1 === month && today.getDate() === day;
+    }
+
+    function hasDateArrived(key) {
+      const [year, month, day] = key.split("-").map(Number);
+      const target = new Date(year, month - 1, day);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return target <= today;
+    }
+
+    function localDateFromKey(key) {
+      const [year, month, day] = key.split("-").map(Number);
+      const date = new Date(year, month - 1, day);
+      date.setHours(0, 0, 0, 0);
+      return date;
+    }
+
+    function updateCheatDaySummary() {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const latestCheatKey = allDateKeys()
+        .filter((key) => getActivity(key).cheatDay && localDateFromKey(key) <= today)
+        .at(-1);
+
+      if (!latestCheatKey) {
+        document.getElementById("cheatDayValue").textContent = "--日";
+        document.getElementById("cheatDayDate").textContent = "未設定";
+        return;
+      }
+
+      const diffDays = Math.round((today - localDateFromKey(latestCheatKey)) / 86400000);
+      document.getElementById("cheatDayValue").textContent = `${diffDays}日`;
+      document.getElementById("cheatDayDate").textContent = `前回 ${formatDate(latestCheatKey)}`;
+    }
+
+    function updateInputReminder(dayEl, key, weightValue, minutesValue, restChecked, stepsValue, memoValue) {
+      const reminderEl = dayEl.querySelector("[data-input-reminder]");
+      const ringFitChecked = dayEl.querySelector(".ring-fit-check")?.checked ?? false;
+      const exerciseBikeChecked = dayEl.querySelector(".exercise-bike-check")?.checked ?? false;
+      const cheatDayChecked = dayEl.querySelector(".cheat-day-check")?.checked ?? false;
+      const hasAnyInput = weightValue !== "" || minutesValue !== "" || restChecked || cheatDayChecked || stepsValue !== "" || ringFitChecked || exerciseBikeChecked || memoValue.trim() !== "";
+      const showReminder = hasDateArrived(key) && !hasAnyInput;
+      dayEl.classList.toggle("needs-input", showReminder);
+
+      if (!showReminder) {
+        reminderEl.textContent = "";
+      } else if (isTodayDate(key)) {
+        reminderEl.textContent = "今日の記録が未入力です。体重か運動を入れておこう。";
+      } else {
+        reminderEl.textContent = "未入力のままです";
+      }
+    }
+
+    function clearInputReminders() {
+      document.querySelectorAll(".day.needs-input").forEach((day) => {
+        day.classList.remove("needs-input");
+        const reminderEl = day.querySelector("[data-input-reminder]");
+        if (reminderEl) reminderEl.textContent = "";
+      });
+    }
+
+    function parseWeight(value) {
+      if (value === "" || value == null) return null;
+      const number = Number(value);
+      return Number.isFinite(number) ? number : null;
+    }
+
+    function signed(value) {
+      if (value == null) return "--";
+      const rounded = Math.round(value * 10) / 10;
+      if (Object.is(rounded, -0) || rounded === 0) return "+0.0";
+      return `${rounded > 0 ? "+" : ""}${rounded.toFixed(1)}`;
+    }
+
+    function classForDiff(value) {
+      if (value == null) return "";
+      if (value > 0) return "plus";
+      if (value < 0) return "minus";
+      return "zero";
+    }
+
+    function allDateKeys() {
+      const keys = [];
+      for (let month = START_MONTH; month <= END_MONTH; month += 1) {
+        const days = new Date(YEAR, month, 0).getDate();
+        for (let day = 1; day <= days; day += 1) {
+          keys.push(dateKey(YEAR, month, day));
+        }
+      }
+      return keys;
+    }
+
+    function previousDateKey(key) {
+      const [year, month, day] = key.split("-").map(Number);
+      const date = new Date(year, month - 1, day);
+      date.setDate(date.getDate() - 1);
+      if (date.getFullYear() !== YEAR || date.getMonth() + 1 < START_MONTH) return null;
+      return dateKey(date.getFullYear(), date.getMonth() + 1, date.getDate());
+    }
+
+    function getEntries() {
+      return allDateKeys()
+        .map((key) => ({ key, weight: parseWeight(weights[key]) }))
+        .filter((entry) => entry.weight != null);
+    }
+
+    function getStats() {
+      const entries = getEntries();
+      if (entries.length === 0) return { entries };
+
+      const latest = entries[entries.length - 1];
+      const max = entries.reduce((best, entry) => entry.weight > best.weight ? entry : best, entries[0]);
+      const min = entries.reduce((best, entry) => entry.weight < best.weight ? entry : best, entries[0]);
+      return { entries, latest, max, min };
+    }
+
+    function updateSummary(stats) {
+      document.getElementById("countValue").textContent = `${stats.entries.length}日`;
+      updateCheatDaySummary();
+
+      if (stats.entries.length === 0) {
+        document.getElementById("latestValue").textContent = "-- kg";
+        document.getElementById("latestDate").textContent = "未入力";
+        document.getElementById("maxValue").textContent = "-- kg";
+        document.getElementById("maxDate").textContent = "未入力";
+        document.getElementById("minValue").textContent = "-- kg";
+        document.getElementById("minDate").textContent = "未入力";
+        document.getElementById("fromMaxValue").textContent = "-- kg";
+        document.getElementById("fromMaxValue").className = "value";
+        return;
+      }
+
+      const fromMax = stats.latest.weight - stats.max.weight;
+      const fromMaxEl = document.getElementById("fromMaxValue");
+      document.getElementById("latestValue").textContent = `${stats.latest.weight.toFixed(1)} kg`;
+      document.getElementById("latestDate").textContent = formatDate(stats.latest.key);
+      document.getElementById("maxValue").textContent = `${stats.max.weight.toFixed(1)} kg`;
+      document.getElementById("maxDate").textContent = formatDate(stats.max.key);
+      document.getElementById("minValue").textContent = `${stats.min.weight.toFixed(1)} kg`;
+      document.getElementById("minDate").textContent = formatDate(stats.min.key);
+      fromMaxEl.textContent = `${signed(fromMax)} kg`;
+      fromMaxEl.className = `value ${classForDiff(fromMax)}`;
+    }
+
+    function updateCalculations() {
+      const stats = getStats();
+      const maxWeight = stats.max ? stats.max.weight : null;
+
+      for (const key of allDateKeys()) {
+        const weight = parseWeight(weights[key]);
+        const dayEl = document.querySelector(`[data-day="${key}"]`);
+        const prevEl = dayEl.querySelector("[data-prev]");
+        const maxEl = dayEl.querySelector("[data-max]");
+
+        if (weight == null) {
+          prevEl.textContent = "--";
+          prevEl.className = "";
+          maxEl.textContent = "--";
+          maxEl.className = "";
+          continue;
+        }
+
+        const previousKey = previousDateKey(key);
+        const previousWeight = previousKey ? parseWeight(weights[previousKey]) : null;
+        const prevDiff = previousWeight == null ? null : weight - previousWeight;
+        const maxDiff = maxWeight == null ? null : weight - maxWeight;
+
+        prevEl.textContent = prevDiff == null ? "--" : `${signed(prevDiff)} kg`;
+        prevEl.className = classForDiff(prevDiff);
+        maxEl.textContent = maxDiff == null ? "--" : `${signed(maxDiff)} kg`;
+        maxEl.className = classForDiff(maxDiff);
+      }
+
+      updateSummary(stats);
+      updateMonthlyExerciseSummary();
+      drawWeightChart(activeMonth);
+    }
+
+    function drawWeightChart(month) {
+      const ctx = chartCanvas.getContext("2d");
+      const rect = chartCanvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(320, Math.floor(rect.width));
+      const height = Math.max(220, Math.floor(rect.height));
+      chartCanvas.width = Math.floor(width * dpr);
+      chartCanvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+
+      const daysInMonth = new Date(YEAR, month, 0).getDate();
+      const points = [];
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const key = dateKey(YEAR, month, day);
+        const weight = parseWeight(weights[key]);
+        if (weight != null) points.push({ day, weight });
+      }
+
+      chartTitle.textContent = `${monthNames[month - 1]}の体重変化`;
+      chartNote.textContent = points.length > 0 ? `${points.length}日分入力済み` : "体重を入力すると折れ線が表示されます";
+
+      const padding = { top: 24, right: 22, bottom: 34, left: 48 };
+      const plotWidth = width - padding.left - padding.right;
+      const plotHeight = height - padding.top - padding.bottom;
+      const axisColor = "#cfd6cf";
+      const gridColor = "#edf0ea";
+      const textColor = "#6b7280";
+      const lineColor = "#0f766e";
+
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = gridColor;
+      ctx.fillStyle = textColor;
+      ctx.font = "12px system-ui, sans-serif";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+
+      const rawMin = points.length ? Math.min(...points.map((point) => point.weight)) : 0;
+      const rawMax = points.length ? Math.max(...points.map((point) => point.weight)) : 1;
+      const rangePad = Math.max(0.5, (rawMax - rawMin) * 0.18);
+      let minWeight = Math.floor((rawMin - rangePad) * 10) / 10;
+      let maxWeight = Math.ceil((rawMax + rangePad) * 10) / 10;
+      if (minWeight === maxWeight) {
+        minWeight -= 0.5;
+        maxWeight += 0.5;
+      }
+
+      for (let i = 0; i <= 4; i += 1) {
+        const y = padding.top + (plotHeight / 4) * i;
+        const value = maxWeight - ((maxWeight - minWeight) / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(padding.left, y);
+        ctx.lineTo(width - padding.right, y);
+        ctx.stroke();
+        ctx.fillText(`${value.toFixed(1)}`, padding.left - 8, y);
+      }
+
+      ctx.strokeStyle = axisColor;
+      ctx.beginPath();
+      ctx.moveTo(padding.left, padding.top);
+      ctx.lineTo(padding.left, height - padding.bottom);
+      ctx.lineTo(width - padding.right, height - padding.bottom);
+      ctx.stroke();
+
+      ctx.fillStyle = textColor;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      const xLabels = [1, Math.ceil(daysInMonth / 2), daysInMonth];
+      xLabels.forEach((day) => {
+        const x = padding.left + ((day - 1) / (daysInMonth - 1)) * plotWidth;
+        ctx.fillText(`${day}日`, x, height - padding.bottom + 10);
+      });
+
+      if (points.length === 0) {
+        ctx.fillStyle = textColor;
+        ctx.font = "14px system-ui, sans-serif";
+        ctx.fillText("この月の体重はまだ未入力です", width / 2, padding.top + plotHeight / 2);
+        return;
+      }
+
+      const toX = (day) => padding.left + ((day - 1) / (daysInMonth - 1)) * plotWidth;
+      const toY = (weight) => padding.top + ((maxWeight - weight) / (maxWeight - minWeight)) * plotHeight;
+
+      if (points.length > 1) {
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        points.forEach((point, index) => {
+          const x = toX(point.day);
+          const y = toY(point.weight);
+          if (index === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      }
+
+      points.forEach((point) => {
+        const x = toX(point.day);
+        const y = toY(point.weight);
+        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      });
+    }
+
+    function setActiveMonth(month) {
+      activeMonth = month;
+      document.querySelectorAll(".tab-button").forEach((button) => {
+        const selected = Number(button.dataset.month) === month;
+        button.setAttribute("aria-selected", String(selected));
+      });
+
+      document.querySelectorAll(".month").forEach((section) => {
+        section.hidden = Number(section.dataset.month) !== month;
+      });
+      updateMonthlyExerciseSummary();
+      drawWeightChart(activeMonth);
+    }
+
+    function setActiveView(view) {
+      activeView = view;
+      viewTabsEl.querySelectorAll(".view-button").forEach((button) => {
+        button.setAttribute("aria-selected", String(button.dataset.view === view));
+      });
+      document.querySelectorAll(".calendar-view").forEach((viewEl) => {
+        viewEl.hidden = viewEl.dataset.view !== view;
+      });
+    }
+
+    function renderCalendar() {
+      const today = new Date();
+      const todayKey = today.getFullYear() === YEAR ? dateKey(YEAR, today.getMonth() + 1, today.getDate()) : "";
+      const currentMonth = today.getFullYear() === YEAR && today.getMonth() + 1 >= START_MONTH && today.getMonth() + 1 <= END_MONTH
+        ? today.getMonth() + 1
+        : START_MONTH;
+      activeMonth = currentMonth;
+
+      for (let month = START_MONTH; month <= END_MONTH; month += 1) {
+        const tabButton = document.createElement("button");
+        tabButton.className = "tab-button";
+        tabButton.type = "button";
+        tabButton.dataset.month = String(month);
+        tabButton.setAttribute("role", "tab");
+        tabButton.setAttribute("aria-selected", "false");
+        tabButton.textContent = monthNames[month - 1];
+        tabButton.addEventListener("click", () => setActiveMonth(month));
+        monthTabsEl.appendChild(tabButton);
+
+        const section = document.createElement("section");
+        section.className = "month";
+        section.dataset.month = String(month);
+        section.hidden = month !== currentMonth;
+        section.innerHTML = `
+          <div class="month-title">
+            <strong>${monthNames[month - 1]}</strong>
+            <span>${YEAR}</span>
+          </div>
+          <div class="calendar-view body-view" data-view="body">
+            <div class="weekdays">${weekdays.map((day) => `<div class="weekday">${day}</div>`).join("")}</div>
+            <div class="days body-days"></div>
+          </div>
+          <div class="calendar-view meal-view" data-view="meal" hidden>
+            <div class="weekdays">${weekdays.map((day) => `<div class="weekday">${day}</div>`).join("")}</div>
+            <div class="days meal-days"></div>
+          </div>
+        `;
+
+        const daysEl = section.querySelector(".body-days");
+        const mealDaysEl = section.querySelector(".meal-days");
+        const firstDay = new Date(YEAR, month - 1, 1).getDay();
+        const daysInMonth = new Date(YEAR, month, 0).getDate();
+
+        for (let i = 0; i < firstDay; i += 1) {
+          const blank = document.createElement("div");
+          blank.className = "day blank";
+          daysEl.appendChild(blank);
+          mealDaysEl.appendChild(blank.cloneNode());
+        }
+
+        for (let day = 1; day <= daysInMonth; day += 1) {
+          const key = dateKey(YEAR, month, day);
+          const dayEl = document.createElement("div");
+          dayEl.className = `day${key === todayKey ? " today" : ""}`;
+          dayEl.dataset.day = key;
+          const activity = getActivity(key);
+          if (activity.rest) dayEl.classList.add("rest");
+          dayEl.innerHTML = `
+            <div class="date-row">
+              <span class="date-num">${day}</span>
+              <span class="today-badge">今日</span>
+            </div>
+            <div class="fields">
+              <label class="field">
+                <span>体重</span>
+                <input class="weight-input" inputmode="decimal" type="number" min="0" max="300" step="0.1" aria-label="${month}月${day}日の体重" placeholder="kg">
+              </label>
+              <label class="field">
+                <span>運動</span>
+                <input class="minutes-input" inputmode="numeric" type="number" min="0" max="1200" step="1" aria-label="${month}月${day}日の運動時間合計" placeholder="合計" readonly>
+              </label>
+              <div class="exercise-checks">
+                <label class="exercise-check">
+                  <input class="ring-fit-check" type="checkbox" aria-label="${month}月${day}日にリングフィットを実施">
+                  <span>リングフィット</span>
+                </label>
+                <label class="exercise-check">
+                  <input class="exercise-bike-check" type="checkbox" aria-label="${month}月${day}日にエアロバイクを実施">
+                  <span>エアロバイク</span>
+                </label>
+              </div>
+              <label class="field exercise-time-field" data-exercise-time-row="ringFit">
+                <span>リング</span>
+                <input class="ring-fit-minutes-input" inputmode="numeric" type="number" min="0" max="600" step="1" aria-label="${month}月${day}日のリングフィット時間" placeholder="分">
+              </label>
+              <label class="field exercise-time-field" data-exercise-time-row="exerciseBike">
+                <span>バイク</span>
+                <input class="exercise-bike-minutes-input" inputmode="numeric" type="number" min="0" max="600" step="1" aria-label="${month}月${day}日のエアロバイク時間" placeholder="分">
+              </label>
+              <div class="daily-checks">
+                <label class="rest-row">
+                  <input class="rest-check" type="checkbox" aria-label="${month}月${day}日を運動休憩日にする">
+                  <span>運動休憩日</span>
+                </label>
+                <label class="rest-row">
+                  <input class="cheat-day-check" type="checkbox" aria-label="${month}月${day}日をチートデイにする">
+                  <span>チートデイ</span>
+                </label>
+              </div>
+              <label class="field steps-field">
+                <span>歩数</span>
+                <input class="steps-input" inputmode="numeric" type="number" min="0" max="100000" step="1" aria-label="${month}月${day}日の歩数" placeholder="歩">
+              </label>
+              <label class="memo-field">
+                <span>メモ</span>
+                <textarea class="memo-input" rows="1" aria-label="${month}月${day}日のメモ"></textarea>
+              </label>
+              <div class="input-reminder" data-input-reminder aria-live="polite"></div>
+            </div>
+            <div class="calc" aria-live="polite">
+              <span class="calc-row"><span>前日比</span><b data-prev>--</b></span>
+              <span class="calc-row"><span>最大から</span><b data-max>--</b></span>
+            </div>
+          `;
+
+          const input = dayEl.querySelector(".weight-input");
+          const minutesInput = dayEl.querySelector(".minutes-input");
+          const ringFitMinutesInput = dayEl.querySelector(".ring-fit-minutes-input");
+          const exerciseBikeMinutesInput = dayEl.querySelector(".exercise-bike-minutes-input");
+          const ringFitTimeRow = dayEl.querySelector('[data-exercise-time-row="ringFit"]');
+          const exerciseBikeTimeRow = dayEl.querySelector('[data-exercise-time-row="exerciseBike"]');
+          const restCheck = dayEl.querySelector(".rest-check");
+          const cheatDayCheck = dayEl.querySelector(".cheat-day-check");
+          const stepsInput = dayEl.querySelector(".steps-input");
+          const ringFitCheck = dayEl.querySelector(".ring-fit-check");
+          const exerciseBikeCheck = dayEl.querySelector(".exercise-bike-check");
+          const memoInput = dayEl.querySelector(".memo-input");
+          input.value = weights[key] ?? "";
+          ringFitMinutesInput.value = activity.ringFitMinutes ?? "";
+          exerciseBikeMinutesInput.value = activity.exerciseBikeMinutes ?? "";
+          minutesInput.value = calculateExerciseTotal(activity);
+          restCheck.checked = Boolean(activity.rest);
+          cheatDayCheck.checked = Boolean(activity.cheatDay);
+          stepsInput.value = activity.steps ?? "";
+          ringFitCheck.checked = Boolean(activity.ringFit);
+          exerciseBikeCheck.checked = Boolean(activity.exerciseBike);
+          toggleExerciseTimeField(ringFitTimeRow, ringFitCheck.checked);
+          toggleExerciseTimeField(exerciseBikeTimeRow, exerciseBikeCheck.checked);
+          memoInput.value = activity.memo ?? "";
+          updateInputReminder(dayEl, key, input.value, minutesInput.value, restCheck.checked, stepsInput.value, memoInput.value);
+          input.addEventListener("input", () => {
+            const value = parseWeight(input.value);
+            if (value == null) {
+              delete weights[key];
+            } else {
+              weights[key] = value.toFixed(1);
+            }
+            saveWeights();
+            updateInputReminder(dayEl, key, input.value, minutesInput.value, restCheck.checked, stepsInput.value, memoInput.value);
+            updateCalculations();
+          });
+          restCheck.addEventListener("change", () => {
+            dayEl.classList.toggle("rest", restCheck.checked);
+            setActivityField(key, "rest", restCheck.checked);
+            setActivityField(key, "minutes", updateExerciseTotal(minutesInput, ringFitMinutesInput, exerciseBikeMinutesInput, restCheck.checked));
+            updateInputReminder(dayEl, key, input.value, minutesInput.value, restCheck.checked, stepsInput.value, memoInput.value);
+          });
+          cheatDayCheck.addEventListener("change", () => {
+            setActivityField(key, "cheatDay", cheatDayCheck.checked);
+            updateInputReminder(dayEl, key, input.value, minutesInput.value, restCheck.checked, stepsInput.value, memoInput.value);
+            updateCheatDaySummary();
+          });
+          stepsInput.addEventListener("input", () => {
+            setActivityField(key, "steps", stepsInput.value);
+            updateInputReminder(dayEl, key, input.value, minutesInput.value, restCheck.checked, stepsInput.value, memoInput.value);
+          });
+          ringFitCheck.addEventListener("change", () => {
+            setActivityField(key, "ringFit", ringFitCheck.checked);
+            toggleExerciseTimeField(ringFitTimeRow, ringFitCheck.checked);
+            if (!ringFitCheck.checked) {
+              ringFitMinutesInput.value = "";
+              setActivityField(key, "ringFitMinutes", "");
+            }
+            setActivityField(key, "minutes", updateExerciseTotal(minutesInput, ringFitMinutesInput, exerciseBikeMinutesInput, restCheck.checked));
+            updateInputReminder(dayEl, key, input.value, minutesInput.value, restCheck.checked, stepsInput.value, memoInput.value);
+          });
+          exerciseBikeCheck.addEventListener("change", () => {
+            setActivityField(key, "exerciseBike", exerciseBikeCheck.checked);
+            toggleExerciseTimeField(exerciseBikeTimeRow, exerciseBikeCheck.checked);
+            if (!exerciseBikeCheck.checked) {
+              exerciseBikeMinutesInput.value = "";
+              setActivityField(key, "exerciseBikeMinutes", "");
+            }
+            setActivityField(key, "minutes", updateExerciseTotal(minutesInput, ringFitMinutesInput, exerciseBikeMinutesInput, restCheck.checked));
+            updateInputReminder(dayEl, key, input.value, minutesInput.value, restCheck.checked, stepsInput.value, memoInput.value);
+          });
+          ringFitMinutesInput.addEventListener("input", () => {
+            setActivityField(key, "ringFitMinutes", ringFitMinutesInput.value);
+            setActivityField(key, "minutes", updateExerciseTotal(minutesInput, ringFitMinutesInput, exerciseBikeMinutesInput, restCheck.checked));
+            updateInputReminder(dayEl, key, input.value, minutesInput.value, restCheck.checked, stepsInput.value, memoInput.value);
+          });
+          exerciseBikeMinutesInput.addEventListener("input", () => {
+            setActivityField(key, "exerciseBikeMinutes", exerciseBikeMinutesInput.value);
+            setActivityField(key, "minutes", updateExerciseTotal(minutesInput, ringFitMinutesInput, exerciseBikeMinutesInput, restCheck.checked));
+            updateInputReminder(dayEl, key, input.value, minutesInput.value, restCheck.checked, stepsInput.value, memoInput.value);
+          });
+          memoInput.addEventListener("input", () => {
+            setActivityField(key, "memo", memoInput.value);
+            updateInputReminder(dayEl, key, input.value, minutesInput.value, restCheck.checked, stepsInput.value, memoInput.value);
+          });
+          inputs.set(key, input);
+          daysEl.appendChild(dayEl);
+
+          const meal = getMeal(key);
+          const mealDayEl = document.createElement("div");
+          mealDayEl.className = `day meal-day${key === todayKey ? " today" : ""}`;
+          mealDayEl.dataset.mealDay = key;
+          mealDayEl.innerHTML = `
+            <div class="date-row">
+              <span class="date-num">${day}</span>
+              <span class="today-badge">今日</span>
+            </div>
+            <div class="meal-fields">
+              <div class="meal-toggle-grid" aria-label="${month}月${day}日の食事区分">
+                <label class="meal-toggle">
+                  <input class="meal-toggle-input" data-meal-toggle="breakfast" type="checkbox" aria-label="${month}月${day}日の朝食欄を表示">
+                  <span>朝</span>
+                </label>
+                <label class="meal-toggle">
+                  <input class="meal-toggle-input" data-meal-toggle="lunch" type="checkbox" aria-label="${month}月${day}日の昼食欄を表示">
+                  <span>昼</span>
+                </label>
+                <label class="meal-toggle">
+                  <input class="meal-toggle-input" data-meal-toggle="dinner" type="checkbox" aria-label="${month}月${day}日の夕食欄を表示">
+                  <span>夜</span>
+                </label>
+                <label class="meal-toggle">
+                  <input class="meal-toggle-input" data-meal-toggle="snack" type="checkbox" aria-label="${month}月${day}日の間食欄を表示">
+                  <span>間食</span>
+                </label>
+              </div>
+              <label class="memo-field meal-note-row" data-meal-row="breakfast">
+                <span>朝</span>
+                <textarea class="meal-note-input" data-meal-field="breakfast" rows="1" aria-label="${month}月${day}日の朝食"></textarea>
+              </label>
+              <label class="memo-field meal-note-row" data-meal-row="lunch">
+                <span>昼</span>
+                <textarea class="meal-note-input" data-meal-field="lunch" rows="1" aria-label="${month}月${day}日の昼食"></textarea>
+              </label>
+              <label class="memo-field meal-note-row" data-meal-row="dinner">
+                <span>夜</span>
+                <textarea class="meal-note-input" data-meal-field="dinner" rows="1" aria-label="${month}月${day}日の夕食"></textarea>
+              </label>
+              <label class="memo-field meal-note-row" data-meal-row="snack">
+                <span>間食</span>
+                <textarea class="meal-note-input" data-meal-field="snack" rows="1" aria-label="${month}月${day}日の間食"></textarea>
+              </label>
+            </div>
+          `;
+
+          mealDayEl.querySelectorAll(".meal-note-input").forEach((mealInput) => {
+            mealInput.value = meal[mealInput.dataset.mealField] ?? "";
+            autoResizeTextarea(mealInput);
+            mealInput.addEventListener("keydown", handleMealBulletKeydown);
+            mealInput.addEventListener("input", () => {
+              autoResizeTextarea(mealInput);
+              setMealField(key, mealInput.dataset.mealField, mealInput.value);
+            });
+          });
+          mealDayEl.querySelectorAll(".meal-toggle-input").forEach((mealToggle) => {
+            const field = mealToggle.dataset.mealToggle;
+            const row = mealDayEl.querySelector(`[data-meal-row="${field}"]`);
+            const input = mealDayEl.querySelector(`[data-meal-field="${field}"]`);
+            mealToggle.checked = Boolean(meal[`${field}Enabled`]);
+            row.classList.toggle("active", mealToggle.checked);
+            if (mealToggle.checked) ensureMealBullet(input);
+            mealToggle.addEventListener("change", () => {
+              row.classList.toggle("active", mealToggle.checked);
+              setMealField(key, `${field}Enabled`, mealToggle.checked);
+              if (mealToggle.checked) {
+                ensureMealBullet(input);
+                setMealField(key, field, input.value);
+                input.focus();
+                input.setSelectionRange(input.value.length, input.value.length);
+              }
+              if (!mealToggle.checked) {
+                input.value = "";
+                setMealField(key, field, "");
+              }
+            });
+          });
+          mealDaysEl.appendChild(mealDayEl);
+        }
+
+        const totalCells = firstDay + daysInMonth;
+        const trailing = (7 - (totalCells % 7)) % 7;
+        for (let i = 0; i < trailing; i += 1) {
+          const blank = document.createElement("div");
+          blank.className = "day blank";
+          daysEl.appendChild(blank);
+          mealDaysEl.appendChild(blank.cloneNode());
+        }
+
+        monthsEl.appendChild(section);
+      }
+
+      setActiveMonth(currentMonth);
+      setActiveView(activeView);
+      updateCalculations();
+    }
+
+    function exportCsv() {
+      const stats = getStats();
+      const maxWeight = stats.max ? stats.max.weight : null;
+      const rows = [["date", "weight_kg", "previous_day_diff_kg", "diff_from_max_kg", "exercise_minutes", "ring_fit_minutes", "exercise_bike_minutes", "exercise_rest_day", "cheat_day", "steps", "ring_fit", "exercise_bike", "memo", "meal_breakfast", "meal_lunch", "meal_dinner", "meal_snack"]];
+
+      for (const key of allDateKeys()) {
+        const weight = parseWeight(weights[key]);
+        const activity = getActivity(key);
+        const meal = getMeal(key);
+        const exerciseTotal = calculateExerciseTotal(activity);
+        if (weight == null) {
+          rows.push([key, "", "", "", exerciseTotal, activity.ringFitMinutes ?? "", activity.exerciseBikeMinutes ?? "", activity.rest ? "1" : "", activity.cheatDay ? "1" : "", activity.steps ?? "", activity.ringFit ? "1" : "", activity.exerciseBike ? "1" : "", activity.memo ?? "", meal.breakfast ?? "", meal.lunch ?? "", meal.dinner ?? "", meal.snack ?? ""]);
+          continue;
+        }
+
+        const previousKey = previousDateKey(key);
+        const previousWeight = previousKey ? parseWeight(weights[previousKey]) : null;
+        const prevDiff = previousWeight == null ? "" : (weight - previousWeight).toFixed(1);
+        const maxDiff = maxWeight == null ? "" : (weight - maxWeight).toFixed(1);
+        rows.push([key, weight.toFixed(1), prevDiff, maxDiff, exerciseTotal, activity.ringFitMinutes ?? "", activity.exerciseBikeMinutes ?? "", activity.rest ? "1" : "", activity.cheatDay ? "1" : "", activity.steps ?? "", activity.ringFit ? "1" : "", activity.exerciseBike ? "1" : "", activity.memo ?? "", meal.breakfast ?? "", meal.lunch ?? "", meal.dinner ?? "", meal.snack ?? ""]);
+      }
+
+      const csv = rows.map((row) => row.map(csvEscape).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "weight_calendar_2026_ios_07_12.csv";
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+    }
+
+    goalInput.addEventListener("input", () => {
+      goal = goalInput.value;
+      saveGoal();
+      updateGoalDisplay(goal);
+    });
+
+    viewTabsEl.querySelectorAll(".view-button").forEach((button) => {
+      button.addEventListener("click", () => setActiveView(button.dataset.view));
+    });
+
+    window.addEventListener("resize", () => {
+      drawWeightChart(activeMonth);
+    });
+
+    document.getElementById("exportCsv").addEventListener("click", exportCsv);
+    document.getElementById("printPage").addEventListener("click", () => window.print());
+    document.getElementById("clearAll").addEventListener("click", () => {
+      if (!confirm("iOS版の2026年7月以降の入力データをすべて消去しますか？")) return;
+      weights = {};
+      activities = {};
+      meals = {};
+      saveWeights();
+      saveActivities();
+      saveMeals();
+      for (const input of inputs.values()) input.value = "";
+      document.querySelectorAll(".minutes-input, .ring-fit-minutes-input, .exercise-bike-minutes-input, .steps-input, .memo-input, .meal-note-input").forEach((input) => {
+        input.value = "";
+        if (input.classList.contains("meal-note-input")) autoResizeTextarea(input);
+      });
+      document.querySelectorAll(".rest-check, .cheat-day-check, .ring-fit-check, .exercise-bike-check, .meal-toggle-input").forEach((input) => {
+        input.checked = false;
+      });
+      document.querySelectorAll(".meal-note-row.active").forEach((row) => {
+        row.classList.remove("active");
+      });
+      document.querySelectorAll(".exercise-time-field.active").forEach((row) => {
+        row.classList.remove("active");
+      });
+      document.querySelectorAll(".day.rest").forEach((day) => {
+        day.classList.remove("rest");
+      });
+      clearInputReminders();
+      updateCalculations();
+      updateCheatDaySummary();
+    });
+
+    renderCalendar();
+  </script>
+</body>
+</html>
