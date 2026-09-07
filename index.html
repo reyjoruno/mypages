@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>わりかんノート | 精算アプリ</title>
+<link rel="stylesheet" href="./style.css">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#27664f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="わりかんノート">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+</head>
+<body>
+<header><div class="top"><div class="brand"><span class="logo">÷</span><div>わりかんノート <div class="version">MONEY MANAGEMENT / iPHONE</div></div></div><span class="save" id="save-status" role="status">このブラウザーに自動保存</span></div></header>
+<main>
+<section class="pwa-info" aria-label="アプリの利用状況">
+  <span id="offline-status" role="status">オフライン利用を準備しています…</span>
+  <details id="install-guide"><summary>ホーム画面に追加するには</summary><p>Safariでこのページを開き、共有メニューの「ホーム画面に追加」を選択してください。「Webアプリとして開く」が表示された場合はオンにします。</p><p>追加したアプリをオンラインで一度開き、「オフライン利用の準備完了」と表示されてからご利用ください。</p></details>
+</section>
+<div class="intro"><div><h1>みんなのお金を、すっきり。</h1><p class="muted">立て替えた支出を記録して、精算までひとつのノートに。</p></div><div class="actions"><button id="export">バックアップ</button><button id="import">復元</button><input type="file" id="import-file" accept="application/json,.json" hidden></div></div>
+<section class="stats" aria-label="集計"><div class="stat"><span>支出の合計</span><strong id="total">¥0</strong></div><div class="stat"><span>1人あたりの平均 <small>（調整前）</small></span><strong id="average">¥0</strong></div><div class="stat"><span>参加メンバー</span><strong id="count">0 <small>人</small></strong></div></section>
+<div class="layout"><aside class="stack left">
+<section class="card"><div class="card-head"><h2><span class="step">01</span>参加者を登録</h2></div><form id="member-form"><label class="field"><span>名前</span><div class="row"><input id="member-name" placeholder="例：田中さん" maxlength="30" required aria-label="参加者の名前"><button type="submit" style="flex:0 0 auto">追加</button></div></label></form><div class="members" id="members"></div><p class="hint">支出ごとに、割り勘するメンバーを選べます。</p></section>
+<section class="card"><div class="card-head"><h2><span class="step">02</span><span id="expense-heading">支出を記録</span></h2></div><form id="expense-form"><label class="field"><span>内容</span><input id="expense-title" placeholder="例：夕食、宿泊費、交通費" maxlength="80" required></label><div class="row"><label class="field"><span>支払日</span><input id="expense-date" type="date" required></label><label class="field"><span>金額（円）</span><input id="expense-amount" type="number" inputmode="numeric" min="1" max="100000000" step="1" placeholder="0" required></label></div><label class="field"><span>立て替えた人</span><select id="expense-payer" required></select></label><div class="field"><span>割り勘するメンバー</span><div id="expense-members" class="checks"></div></div><button class="primary full" id="expense-submit" type="submit">＋ 支出を追加</button><button type="button" class="full" id="cancel-edit" hidden style="margin-top:8px">編集をキャンセル</button></form>
+<details class="subsection"><summary>固定額の支払いを設定</summary><p class="hint">選んだ支出について、特定の人の負担額を固定します。残りを他の対象者で均等に分けます。</p><div id="fixed-fields" style="margin-top:12px"></div></details>
+</section></aside>
+<div class="stack">
+<section class="card"><div class="card-head"><h2><span class="step">03</span>精算のまとめ</h2><span class="badge">自動計算</span></div><div id="balances"></div><div id="transfers"></div><details class="subsection"><summary>個別に精算額を調整する</summary><p class="hint">支払う人と受け取る人を指定して、精算額に加算します。実際の送金は下の「支払済みにする」で記録します。</p><form id="adjust-form" style="margin-top:14px"><div class="row"><label class="field"><span>支払う人</span><select id="adjust-from" required></select></label><label class="field"><span>受け取る人</span><select id="adjust-to" required></select></label></div><div class="row"><label class="field"><span>調整額（円）</span><input id="adjust-amount" type="number" inputmode="numeric" min="1" max="100000000" step="1" required></label><label class="field"><span>理由</span><input id="adjust-note" maxlength="80" placeholder="例：個別の追加負担" required></label></div><button type="submit">調整を追加</button></form><div id="adjustments"></div></details></section>
+<section class="card"><div class="card-head"><h2>支出・請求額一覧</h2><span class="muted" id="expense-count">0件</span></div><div id="expenses"></div></section>
+<section class="card"><div class="card-head"><h2>精算の支払履歴</h2><button class="small" id="print">印刷</button></div><div id="payments"></div></section>
+</div></div><footer>データはこの端末のブラウザーに保存されます。大切な記録は「バックアップ」で保存してください。<br>日本円・1円単位。割り切れない端数は対象者の登録順に1円ずつ配分します。</footer>
+</main><div id="toast" role="status" hidden></div>
+<script src="./app.js" defer></script>
+</body>
+</html>
